@@ -6,17 +6,37 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-function PostInfo({ post }: { post: PostWithContentDto }) {
-  const router = useRouter();
+function usePost(id: number) {
+  const [post, setPost] = useState<PostWithContentDto | null>(null);
 
-  const deletePost = (id: number) => {
+  useEffect(() => {
+    apiFetch(`/api/v1/posts/${id}`)
+      .then(setPost)
+      .catch((error) => {
+        alert(`${error.resultCode} : ${error.msg}`);
+      });
+  }, []);
+
+  const deletePost = (id: number, onSuccess: () => void) => {
     apiFetch(`/api/v1/posts/${id}`, {
       method: "DELETE",
-    }).then((data) => {
-      alert(data.msg);
-      router.replace("/posts");
-    });
+    }).then(onSuccess);
   };
+
+  return {
+    post,
+    deletePost,
+  };
+}
+
+function PostInfo({
+  post,
+  deletePost,
+}: {
+  post: PostWithContentDto;
+  deletePost: (id: number, onSuccess: () => void) => void;
+}) {
+  const router = useRouter();
 
   return (
     <>
@@ -29,7 +49,9 @@ function PostInfo({ post }: { post: PostWithContentDto }) {
           className="p-2 rounded border"
           onClick={() =>
             confirm(`${post.id}번 글을 정말로 삭제하시겠습니까?`) &&
-            deletePost(post.id)
+            deletePost(post.id, () => {
+              router.replace("/posts");
+            })
           }
         >
           삭제
@@ -155,18 +177,13 @@ export default function Page() {
   const { id: idStr } = useParams<{ id: string }>();
   const id = Number(idStr);
 
-  const [post, setPost] = useState<PostWithContentDto | null>(null);
+  const { post, deletePost } = usePost(id);
+
   const [postComments, setPostComments] = useState<PostCommentDto[] | null>(
     null
   );
 
   useEffect(() => {
-    apiFetch(`/api/v1/posts/${id}`)
-      .then(setPost)
-      .catch((error) => {
-        alert(`${error.resultCode} : ${error.msg}`);
-      });
-
     apiFetch(`/api/v1/posts/${id}/comments`)
       .then(setPostComments)
       .catch((error) => {
@@ -180,7 +197,7 @@ export default function Page() {
     <>
       <h1>글 상세페이지</h1>
 
-      <PostInfo post={post} />
+      <PostInfo post={post} deletePost={deletePost} />
 
       <PostCommentWriteAndList
         id={id}
