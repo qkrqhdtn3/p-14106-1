@@ -28,6 +28,10 @@ export default function Page() {
       method: "DELETE",
     }).then((data) => {
       alert(data.msg);
+
+      if (postComments == null) return;
+
+      setPostComments(postComments.filter((c) => c.id != commentId));
     });
   };
 
