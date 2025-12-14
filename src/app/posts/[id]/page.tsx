@@ -76,9 +76,17 @@ export default function Page() {
   };
 
   useEffect(() => {
-    apiFetch(`/api/v1/posts/${id}`).then(setPost);
+    apiFetch(`/api/v1/posts/${id}`)
+      .then(setPost)
+      .catch((error) => {
+        alert(`${error.resultCode} : ${error.msg}`);
+      });
 
-    apiFetch(`/api/v1/posts/${id}/comments`).then(setPostComments);
+    apiFetch(`/api/v1/posts/${id}/comments`)
+      .then(setPostComments)
+      .catch((error) => {
+        alert(error.message);
+      });
   }, []);
 
   if (post == null) return <div>로딩중...</div>;
